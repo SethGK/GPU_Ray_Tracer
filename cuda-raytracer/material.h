@@ -8,14 +8,21 @@
 enum MaterialType { LAMBERTIAN=0, METAL=1, DIELECTRIC=2 };
 
 __host__ __device__ inline bool lambertian_scatter(const ray& r_in, const hit_record& rec, RNG& rng, color& attenuation, ray& scattered) {
-    vec3 scatter_direction = rec.normal;
-    // Add random unit vector for diffuse
+    // Generate a random scatter direction on the hemisphere oriented along the normal
     float z = random_float(rng, -1.0f, 1.0f);
     float a = random_float(rng, 0.0f, 2.0f*pi);
     float r = sqrtf(fmaxf(0.0f, 1.0f - z*z));
     vec3 rand_dir(r*cosf(a), r*sinf(a), z);
-    scatter_direction = unit_vector(scatter_direction + rand_dir);
-    scattered = ray(rec.p, scatter_direction);
+
+    vec3 scatter_direction = rec.normal + rand_dir;
+
+    // Guard against a random direction that is perfectly opposite the normal,
+    // which would result in a zero-length vector.
+    if (scatter_direction.length_squared() < 1e-12f) {
+        scatter_direction = rec.normal;
+    }
+
+    scattered = ray(rec.p, unit_vector(scatter_direction));
     attenuation = rec.albedo;
     return true;
 }

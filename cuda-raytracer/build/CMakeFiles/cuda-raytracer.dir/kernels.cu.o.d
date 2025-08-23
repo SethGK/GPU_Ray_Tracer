@@ -182,6 +182,7 @@ CMakeFiles/cuda-raytracer.dir/kernels.cu.o : /home/seth/workspace/github.com/Set
     /usr/include/c++/11/utility \
     /usr/include/c++/11/bits/stl_relops.h \
     /usr/include/c++/11/initializer_list \
+    /usr/include/c++/11/cstdio \
     /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/utils.h \
     /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h \
     /usr/include/stdint.h \
@@ -190,6 +191,7 @@ CMakeFiles/cuda-raytracer.dir/kernels.cu.o : /home/seth/workspace/github.com/Set
     /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/camera.h \
     /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/ray.h \
     /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/vec3.h \
+    /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/camera_params.h \
     /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/sphere.h \
     /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/hittable.h \
     /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/material.h

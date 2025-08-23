@@ -1,14 +1,14 @@
 # CUDA Ray Tracer (C++17 + CUDA)
 
-A minimal, educational CUDA ray tracer that renders a small scene with Lambertian, Metal, and Dielectric materials using recursive ray tracing on the GPU. Builds with CMake and targets NVIDIA RTX 30-series (SM 86) using CUDA cores only.
+A high-performance CUDA ray tracer that renders a scene with Lambertian, Metal, and Dielectric materials using recursive ray tracing on the GPU. Features optimized camera parameter passing and memory layout for better performance. Builds with CMake and targets modern NVIDIA GPUs using CUDA cores.
 
 ## Features
-- Pinhole camera with configurable FOV
+- Pinhole camera with configurable FOV and optimized parameter passing
 - Materials: Lambertian (diffuse), Metal (reflective, with fuzz), Dielectric (refractive)
-- Recursive ray tracing with depth control
-- Gradient sky background
-- One-thread-per-pixel CUDA kernel with per-row progress logging
-- Output: `output.ppm`
+- Recursive ray tracing with depth control and safe recursion handling
+- Gradient sky background with proper gamma correction
+- Optimized CUDA kernel with one-thread-per-pixel and progress logging
+- Output: `output.ppm` (PPM format) and `output.png` (converted)
 
 ## Build and Run
 ```bash
@@ -40,9 +40,14 @@ Then you can view it locally or embed it in Markdown:
 Edit `cuda-raytracer/main.cpp`:
 - Image size: `image_width`, `image_height` (default 800x600)
 - Anti-aliasing: `samples_per_pixel` (default 50)
-- Recursion depth: `max_depth` (default 10)
-- Camera: `camera cam(...)`
+- Recursion depth: `max_depth` (default 10, increase for more reflections/refractions)
+- Camera: Position and look-at point in `main.cpp`
 - Scene: `host_spheres` (materials: 0 = Lambertian, 1 = Metal, 2 = Dielectric)
+
+For better quality:
+- Increase `samples_per_pixel` for reduced noise (50-500 recommended)
+- Increase `max_depth` for more accurate reflections/refractions (10-50)
+- Adjust camera position and look-at point in `main.cpp`
 
 ## Project Layout
 - `cuda-raytracer/` — source code and CMake project
@@ -59,7 +64,14 @@ Edit `cuda-raytracer/main.cpp`:
 - CMake 3.18+
 - A C++17 compiler
 
+## Performance Optimizations
+- Uses plain-old-data (POD) `CameraParams` for efficient GPU memory access
+- Safe recursion handling with depth-based termination
+- NaN/Inf protection for numerical stability
+- Optimized memory layout for ray tracing data structures
+
 ## Notes
-- Only CUDA APIs are used (no RTX cores / OptiX).
-- Code is annotated with `__host__ __device__` where necessary.
-- Straightforward brute-force sphere intersection; suitable for learning and extension (e.g., BVH, textures, more primitives).
+- Only CUDA APIs are used (no RTX cores / OptiX)
+- Code is annotated with `__host__`/`__device__` for CUDA compatibility
+- Brute-force sphere intersection for simplicity (suitable for learning)
+- Easy to extend with BVH, textures, or additional primitives

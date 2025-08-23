@@ -137,13 +137,14 @@ CMakeFiles/cuda-raytracer.dir/main.cpp.o: \
  /usr/include/c++/11/tr1/poly_hermite.tcc \
  /usr/include/c++/11/tr1/poly_laguerre.tcc \
  /usr/include/c++/11/tr1/riemann_zeta.tcc \
- /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/color.h \
- /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/camera.h \
  /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/utils.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+ /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/color.h \
+ /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/camera.h \
  /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/ray.h \
+ /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/camera_params.h \
  /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/sphere.h \
  /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/hittable.h \
  /home/seth/workspace/github.com/SethGK/GPU_ray_tracer/cuda-raytracer/material.h

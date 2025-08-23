@@ -185,6 +185,7 @@ CMakeFiles/cuda-raytracer.dir/kernels.cu.o: ../kernels.cu \
   /usr/include/c++/11/utility \
   /usr/include/c++/11/bits/stl_relops.h \
   /usr/include/c++/11/initializer_list \
+  /usr/include/c++/11/cstdio \
   ../utils.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h \
   /usr/include/stdint.h \
@@ -193,6 +194,7 @@ CMakeFiles/cuda-raytracer.dir/kernels.cu.o: ../kernels.cu \
   ../camera.h \
   ../ray.h \
   ../vec3.h \
+  ../camera_params.h \
   ../sphere.h \
   ../hittable.h \
   ../material.h
@@ -349,14 +351,15 @@ CMakeFiles/cuda-raytracer.dir/main.cpp.o: ../main.cpp \
   /usr/include/c++/11/tr1/poly_hermite.tcc \
   /usr/include/c++/11/tr1/poly_laguerre.tcc \
   /usr/include/c++/11/tr1/riemann_zeta.tcc \
-  ../color.h \
-  ../camera.h \
   ../utils.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h \
   /usr/include/stdint.h \
   /usr/include/x86_64-linux-gnu/bits/wchar.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+  ../color.h \
+  ../camera.h \
   ../ray.h \
+  ../camera_params.h \
   ../sphere.h \
   ../hittable.h \
   ../material.h
@@ -374,8 +377,6 @@ CMakeFiles/cuda-raytracer.dir/main.cpp.o: ../main.cpp \
 
 /usr/include/c++/11/vector:
 
-/usr/include/c++/11/cstdio:
-
 /usr/include/c++/11/bits/vector.tcc:
 
 ../material.h:
@@ -384,6 +385,8 @@ CMakeFiles/cuda-raytracer.dir/main.cpp.o: ../main.cpp \
 
 ../sphere.h:
 
+../camera_params.h:
+
 ../vec3.h:
 
 ../ray.h:
@@ -391,6 +394,8 @@ CMakeFiles/cuda-raytracer.dir/main.cpp.o: ../main.cpp \
 /usr/include/c++/11/bits/range_access.h:
 
 ../camera.h:
+
+/usr/include/c++/11/cstdio:
 
 /usr/local/cuda-13.0/include/device_launch_parameters.h:
 
