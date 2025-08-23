@@ -7,7 +7,7 @@
 struct sphere {
     point3 center;
     float radius;
-    int material_type; // MaterialType
+    int material_type; // 0=Lambertian, 1=Metal, 2=Dielectric, 3=Emissive
     vec3 albedo;
     float fuzz;
     float ir;

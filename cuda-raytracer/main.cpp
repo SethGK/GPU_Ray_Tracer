@@ -1,5 +1,7 @@
 #include <cstdio>
 #include <vector>
+#include <string>
+#include <iostream>
 #include <cuda_runtime.h>
 
 #include "vec3.h"
@@ -8,15 +10,16 @@
 #include "camera.h"
 #include "camera_params.h"
 #include "sphere.h"
+#include "scenes.h"
 
 // Host wrapper provided by kernels.cu
 extern "C" void launch_render(color* d_fb, int image_width, int image_height, int samples_per_pixel, int max_depth,
                                const CameraParams& cam, const sphere* d_spheres, int sphere_count, int y0, int y1);
 
-int main() {
-    // Image
-    const int image_width = 800;
-    const int image_height = 600;
+int main(int argc, char* argv[]) {
+    // Image (1920x1080 for desktop background)
+    const int image_width = 1920;
+    const int image_height = 1080;
     const int samples_per_pixel = 50;
     const int max_depth = 10; // reduced to avoid excessive device recursion depth
 
@@ -38,38 +41,52 @@ int main() {
         cam.lower_left_corner = cam.origin - cam.horizontal/2.0f - cam.vertical/2.0f - w;
     }
 
-    // Scene: large random sphere grid + big spheres
-    std::vector<sphere> host_spheres;
-    RNG rng(1337u);
-    // ground
-    host_spheres.push_back({ point3(0,-1000.0f,0), 1000.0f, 0, vec3(0.5f,0.5f,0.5f), 0.0f, 1.0f });
+    hittable_list world;
+    std::string scene_name = "default";
 
-    for (int a = -11; a <= 11; ++a) {
-        for (int b = -11; b <= 11; ++b) {
-            float choose_mat = random_float(rng);
-            point3 center(a + 0.9f*random_float(rng), 0.2f, b + 0.9f*random_float(rng));
+    if (argc > 2 && std::string(argv[1]) == "--scene") {
+        scene_name = argv[2];
+    }
 
-            if ((center - point3(4, 0.2f, 0)).length() > 0.9f) {
-                if (choose_mat < 0.8f) {
-                    // diffuse
-                    vec3 albedo(random_float(rng)*random_float(rng), random_float(rng)*random_float(rng), random_float(rng)*random_float(rng));
-                    host_spheres.push_back({ center, 0.2f, 0, albedo, 0.0f, 1.0f });
-                } else if (choose_mat < 0.95f) {
-                    // metal
-                    vec3 albedo(random_float(rng, 0.5f, 1.0f), random_float(rng, 0.5f, 1.0f), random_float(rng, 0.5f, 1.0f));
-                    float fuzz = random_float(rng, 0.0f, 0.5f);
-                    host_spheres.push_back({ center, 0.2f, 1, albedo, fuzz, 1.0f });
-                } else {
-                    // glass
-                    host_spheres.push_back({ center, 0.2f, 2, vec3(1.0f,1.0f,1.0f), 0.0f, 1.5f });
-                }
-            }
+    if (scene_name == "crystal") {
+        std::cout << "Rendering scene: Crystal Cluster" << std::endl;
+        world = crystal_cluster();
+    } else if (scene_name == "molecule") {
+        std::cout << "Rendering scene: Molecule" << std::endl;
+        world = molecule();
+    } else if (scene_name == "recursive") {
+        std::cout << "Rendering scene: Recursive Sculpture" << std::endl;
+        world = recursive_sculpture();
+    } else if (scene_name == "packed") {
+        std::cout << "Rendering scene: Packed Spheres" << std::endl;
+        world = packed_spheres();
+    } else {
+        std::cout << "Rendering scene: Default Spiral" << std::endl;
+        // Default scene logic from before
+        RNG rng(1337u);
+        world.add({point3(0,-1000.0f,0), 1000.0f, 0, vec3(0.5f,0.5f,0.5f), 0.0f, 1.0f});
+        world.add({point3(0, 1, 0), 1.0f, 2, vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.5f});
+        world.add({point3(-4, 1, 0), 1.0f, 0, vec3(0.4f, 0.2f, 0.1f), 0.0f, 1.0f});
+        world.add({point3(4, 1, 0), 1.0f, 1, vec3(0.7f, 0.6f, 0.5f), 0.1f, 1.0f});
+        const int num_spheres_in_spiral = 150;
+        for (int i = 0; i < num_spheres_in_spiral; ++i) {
+            float fraction = (float)i / (num_spheres_in_spiral - 1);
+            float angle = fraction * 4 * 2.0f * M_PI;
+            float radius = 2.0f + fraction * 6.0f;
+            float y = 0.2f + fraction * 10.0f;
+            point3 center(radius*cosf(angle), y, radius*sinf(angle));
+            float sphere_radius = 0.2f + fraction*0.3f;
+            int material_type = i % 3;
+            vec3 albedo;
+            float fuzz = 0.0f, ref_idx = 1.0f;
+            if (material_type == 0) albedo = vec3(0.1f + fraction*0.8f, 0.5f, 1.0f - fraction);
+            else if (material_type == 1) { albedo = vec3(0.8f,0.8f,0.8f); fuzz = fraction*0.3f; }
+            else { albedo = vec3(1.0f,1.0f,1.0f); ref_idx = 1.3f + fraction*0.4f; }
+            world.add({center, sphere_radius, material_type, albedo, fuzz, ref_idx});
         }
     }
 
-    host_spheres.push_back({ point3(0,1,0), 1.0f, 2, vec3(1.0f,1.0f,1.0f), 0.0f, 1.5f });
-    host_spheres.push_back({ point3(-4,1,0), 1.0f, 0, vec3(0.4f,0.2f,0.1f), 0.0f, 1.0f });
-    host_spheres.push_back({ point3(4,1,0), 1.0f, 1, vec3(0.7f,0.6f,0.5f), 0.0f, 1.0f });
+    std::vector<sphere> host_spheres = world.objects;
 
     sphere* d_spheres = nullptr;
     cudaMalloc(&d_spheres, host_spheres.size()*sizeof(sphere));

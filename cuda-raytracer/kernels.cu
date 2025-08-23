@@ -42,6 +42,9 @@ __device__ color ray_color(const ray& r, const sphere* spheres, int sphere_count
     }
 
     if (hit_anything) {
+        if (temp_rec.material_type == 3) { // Emissive
+            return temp_rec.albedo;
+        }
         ray scattered;
         color attenuation;
         bool ok = false;
