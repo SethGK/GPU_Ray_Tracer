@@ -19,53 +19,57 @@ __device__ inline color sanitize(color c) {
     return color(safe_component(c.x()), safe_component(c.y()), safe_component(c.z()));
 }
 
+__device__ color sky_color(const ray& r) {
+    vec3 unit_direction = unit_vector(r.direction());
+    float t = 0.5f * (unit_direction.y() + 1.0f);
+    return (1.0f - t) * color(1.0f, 1.0f, 1.0f) + t * color(0.5f, 0.7f, 1.0f);
+}
+
 __device__ color ray_color(const ray& r, const sphere* spheres, int sphere_count, int depth, RNG& rng) {
-    // If we've exceeded the ray bounce limit, approximate remaining contribution by background
+    // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0) {
-        vec3 unit_direction = unit_vector(r.direction());
-        float t = 0.5f*(unit_direction.y() + 1.0f);
-        return (1.0f-t)*color(1.0f, 1.0f, 1.0f) + t*color(0.5f, 0.7f, 1.0f);
+        return color(0,0,0);
     }
 
-    hit_record temp_rec;
+    hit_record rec;
     bool hit_anything = false;
     float closest = 1e30f;
 
-    // brute-force hit over spheres
+    // Find the closest hit
     for (int i=0; i<sphere_count; ++i) {
-        hit_record rec;
-        if (spheres[i].hit(r, 0.001f, closest, rec)) {
+        hit_record temp_rec;
+        if (spheres[i].hit(r, 0.001f, closest, temp_rec)) {
             hit_anything = true;
-            closest = rec.t;
-            temp_rec = rec;
+            closest = temp_rec.t;
+            rec = temp_rec;
         }
     }
 
     if (hit_anything) {
-        if (temp_rec.material_type == 3) { // Emissive
-            return temp_rec.albedo;
-        }
         ray scattered;
         color attenuation;
-        bool ok = false;
-        if (temp_rec.material_type == 0) {
-            ok = lambertian_scatter(r, temp_rec, rng, attenuation, scattered);
-        } else if (temp_rec.material_type == 1) {
-            ok = metal_scatter(r, temp_rec, rng, attenuation, scattered);
-        } else {
-            ok = dielectric_scatter(r, temp_rec, rng, attenuation, scattered);
+        color emitted = rec.albedo; // Emissive material will have albedo > 1
+
+        if (rec.material_type == EMISSIVE) {
+            return emitted;
         }
-        if (ok) return sanitize(attenuation * ray_color(scattered, spheres, sphere_count, depth-1, rng));
-        // Fallback to background when a material absorption would otherwise yield black
-        vec3 unit_direction_bg = unit_vector(r.direction());
-        float t_bg = 0.5f*(unit_direction_bg.y() + 1.0f);
-        return sanitize((1.0f-t_bg)*color(1.0f, 1.0f, 1.0f) + t_bg*color(0.5f, 0.7f, 1.0f));
+
+        bool scattered_ok = false;
+        if (rec.material_type == LAMBERTIAN) {
+            scattered_ok = lambertian_scatter(r, rec, rng, attenuation, scattered);
+        } else if (rec.material_type == METAL) {
+            scattered_ok = metal_scatter(r, rec, rng, attenuation, scattered);
+        } else { // DIELECTRIC
+            scattered_ok = dielectric_scatter(r, rec, rng, attenuation, scattered);
+        }
+
+        if (scattered_ok) {
+            return sanitize(attenuation * ray_color(scattered, spheres, sphere_count, depth-1, rng));
+        }
+        return color(0,0,0); // Should not happen with current materials
     }
 
-    // background gradient
-    vec3 unit_direction = unit_vector(r.direction());
-    float t = 0.5f*(unit_direction.y() + 1.0f);
-    return sanitize((1.0f-t)*color(1.0f, 1.0f, 1.0f) + t*color(0.5f, 0.7f, 1.0f));
+    return sky_color(r);
 }
 
 __global__ void render_kernel(color* framebuffer, int image_width, int image_height, int samples_per_pixel, int max_depth,

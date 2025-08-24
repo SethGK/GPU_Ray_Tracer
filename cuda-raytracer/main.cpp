@@ -20,22 +20,26 @@ int main(int argc, char* argv[]) {
     // Image (1920x1080 for desktop background)
     const int image_width = 1920;
     const int image_height = 1080;
-    const int samples_per_pixel = 50;
-    const int max_depth = 10; // reduced to avoid excessive device recursion depth
+    const int samples_per_pixel = 1000;
+    const int max_depth = 50;
 
     // Camera
-    camera cam_host(point3(13,2,3), point3(0,0,0), vec3(0,1,0), 20.0f, float(image_width)/image_height);
+    point3 lookfrom(5.0f, 2.0f, 5.0f);
+    point3 lookat(0.0f, 1.0f, 0.0f);
+    vec3 vup(0,1,0);
+    float vfov = 40.0f;
+    camera cam_host(lookfrom, lookat, vup, vfov, float(image_width)/image_height);
     CameraParams cam{};
     // Recompute camera params to pass as POD
     {
-        float theta = degrees_to_radians(20.0f);
+        float theta = degrees_to_radians(vfov);
         float h = tanf(theta/2.0f);
         float viewport_height = 2.0f * h;
         float viewport_width = (float)image_width/(float)image_height * viewport_height;
-        vec3 w = unit_vector(point3(13,2,3) - point3(0,0,0));
-        vec3 u = unit_vector(cross(vec3(0,1,0), w));
+        vec3 w = unit_vector(lookfrom - lookat);
+        vec3 u = unit_vector(cross(vup, w));
         vec3 v = cross(w, u);
-        cam.origin = point3(13,2,3);
+        cam.origin = lookfrom;
         cam.horizontal = viewport_width * u;
         cam.vertical = viewport_height * v;
         cam.lower_left_corner = cam.origin - cam.horizontal/2.0f - cam.vertical/2.0f - w;
@@ -62,27 +66,39 @@ int main(int argc, char* argv[]) {
         world = packed_spheres();
     } else {
         std::cout << "Rendering scene: Default Spiral" << std::endl;
-        // Default scene logic from before
+        // Default scene logic updated for more realism
         RNG rng(1337u);
-        world.add({point3(0,-1000.0f,0), 1000.0f, 0, vec3(0.5f,0.5f,0.5f), 0.0f, 1.0f});
-        world.add({point3(0, 1, 0), 1.0f, 2, vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.5f});
-        world.add({point3(-4, 1, 0), 1.0f, 0, vec3(0.4f, 0.2f, 0.1f), 0.0f, 1.0f});
-        world.add({point3(4, 1, 0), 1.0f, 1, vec3(0.7f, 0.6f, 0.5f), 0.1f, 1.0f});
-        const int num_spheres_in_spiral = 150;
-        for (int i = 0; i < num_spheres_in_spiral; ++i) {
-            float fraction = (float)i / (num_spheres_in_spiral - 1);
-            float angle = fraction * 4 * 2.0f * M_PI;
-            float radius = 2.0f + fraction * 6.0f;
-            float y = 0.2f + fraction * 10.0f;
-            point3 center(radius*cosf(angle), y, radius*sinf(angle));
-            float sphere_radius = 0.2f + fraction*0.3f;
-            int material_type = i % 3;
-            vec3 albedo;
-            float fuzz = 0.0f, ref_idx = 1.0f;
-            if (material_type == 0) albedo = vec3(0.1f + fraction*0.8f, 0.5f, 1.0f - fraction);
-            else if (material_type == 1) { albedo = vec3(0.8f,0.8f,0.8f); fuzz = fraction*0.3f; }
-            else { albedo = vec3(1.0f,1.0f,1.0f); ref_idx = 1.3f + fraction*0.4f; }
-            world.add({center, sphere_radius, material_type, albedo, fuzz, ref_idx});
+        // Ground plane
+        world.add({point3(0,-1000.0f,0), 1000.0f, 1, vec3(0.8f,0.8f,0.8f), 0.1f, 1.0f});
+
+        // Emissive light source
+        world.add({point3(0, 4, 0), 1.5f, 3, vec3(4.0f, 4.0f, 4.0f), 0.0f, 0.0f});
+
+        // Central spheres
+        world.add({point3(0, 1, 0), 1.0f, 2, vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.5f}); // Dielectric
+        world.add({point3(-2, 1, -1), 1.0f, 1, vec3(0.7f, 0.6f, 0.5f), 0.05f, 1.0f}); // Metal
+        world.add({point3(2, 1, 1), 1.0f, 0, vec3(0.4f, 0.2f, 0.1f), 0.0f, 1.0f}); // Diffuse
+
+        // Random smaller spheres
+        const int num_spheres = 200;
+        for (int i = 0; i < num_spheres; ++i) {
+            point3 center(random_float(rng, -10.0f, 10.0f), 0.2f, random_float(rng, -10.0f, 10.0f));
+            if ((center - point3(4,0.2,0)).length() > 0.9) {
+                float sphere_radius = 0.2f;
+                int material_type = (int)floorf(random_float(rng, 0.0f, 3.0f));
+                vec3 albedo;
+                float fuzz = 0.0f, ref_idx = 1.5f;
+                if (material_type == 0) { // Diffuse
+                    albedo = vec3(random_float(rng, 0.0f, 1.0f), random_float(rng, 0.0f, 1.0f), random_float(rng, 0.0f, 1.0f));
+                } else if (material_type == 1) { // Metal
+                    albedo = vec3(random_float(rng, 0.5f, 1.0f), random_float(rng, 0.5f, 1.0f), random_float(rng, 0.5f, 1.0f));
+                    fuzz = random_float(rng, 0.0f, 0.2f);
+                } else { // Dielectric
+                    albedo = vec3(1.0f, 1.0f, 1.0f);
+                    ref_idx = 1.5f;
+                }
+                world.add({center, sphere_radius, material_type, albedo, fuzz, ref_idx});
+            }
         }
     }
 
