@@ -69,46 +69,66 @@ hittable_list recursive_sculpture() {
 
 
 #include <cmath>
-// Scene: Packed spheres in a uniform 3D grid (touching, no overlap)
+// Scene: Packed spheres filling the viewport
 hittable_list packed_spheres() {
     hittable_list world;
 
-    // Easy-to-tweak parameters
-    const int Nx = 6;   // number along X
-    const int Ny = 3;   // number along Y
-    const int Nz = 6;   // number along Z
-    const float radius = 0.4f;
-    const float spacing = 2.0f * radius; // touching
+    // Increased number of spheres for better coverage
+    const int Nx = 12;   // number along X
+    const int Ny = 8;    // number along Y
+    const int Nz = 12;   // number along Z
+    const float radius = 0.3f;  // Slightly smaller radius to fit more spheres
+    const float spacing = 2.1f * radius; // Slightly overlapping for denser packing
 
-    // Optional ground
-    world.add({ point3(0,-1000.0f,0), 1000.0f, 0, vec3(0.5f,0.5f,0.5f), 0.0f, 1.0f });
-
-    // Offset so the cluster is centered-ish around the origin
+    // Center the sphere cluster in the scene
     const float ox = -0.5f * (Nx - 1) * spacing;
-    const float oy = radius + 0.01f; // slightly above ground
+    const float oy = 0.0f;  // Start from y=0
     const float oz = -0.5f * (Nz - 1) * spacing;
 
     RNG rng(2025u);
 
+    // Add main cluster of spheres
     for (int iy = 0; iy < Ny; ++iy) {
         for (int ix = 0; ix < Nx; ++ix) {
             for (int iz = 0; iz < Nz; ++iz) {
-                point3 c(ox + ix * spacing, oy + iy * spacing, oz + iz * spacing);
+                // Add some randomness to the positions for a more organic look
+                float rx = random_float(rng, -0.1f, 0.1f) * spacing;
+                float ry = random_float(rng, -0.1f, 0.1f) * spacing;
+                float rz = random_float(rng, -0.1f, 0.1f) * spacing;
+                
+                point3 c(
+                    ox + ix * spacing + rx,
+                    oy + iy * spacing + ry,
+                    oz + iz * spacing + rz
+                );
 
-                // Randomize material: 0=diffuse, 1=metal, 2=dielectric
-                int m = (int)floorf(random_float(rng, 0.0f, 3.0f));
-                vec3 albedo(0.7f, 0.7f, 0.7f);
+                // Randomize material with different probabilities
+                float mat_choice = random_float(rng);
+                int m;
+                vec3 albedo;
                 float fuzz = 0.0f;
                 float ir = 1.0f;
-                if (m == 0) {
-                    // Diffuse with random color
-                    albedo = vec3(random_float(rng, 0.2f, 0.9f), random_float(rng, 0.2f, 0.9f), random_float(rng, 0.2f, 0.9f));
-                } else if (m == 1) {
-                    // Metal with slight fuzz
-                    albedo = vec3(random_float(rng, 0.6f, 0.95f), random_float(rng, 0.6f, 0.95f), random_float(rng, 0.6f, 0.95f));
-                    fuzz = random_float(rng, 0.0f, 0.25f);
+
+                if (mat_choice < 0.6f) {
+                    // 60% chance for diffuse
+                    m = 0;
+                    albedo = vec3(
+                        random_float(rng, 0.2f, 0.9f),
+                        random_float(rng, 0.2f, 0.9f),
+                        random_float(rng, 0.2f, 0.9f)
+                    );
+                } else if (mat_choice < 0.9f) {
+                    // 30% chance for metal
+                    m = 1;
+                    albedo = vec3(
+                        random_float(rng, 0.7f, 0.95f),
+                        random_float(rng, 0.7f, 0.95f),
+                        random_float(rng, 0.7f, 0.95f)
+                    );
+                    fuzz = random_float(rng, 0.0f, 0.15f);
                 } else {
-                    // Dielectric (glass)
+                    // 10% chance for dielectric
+                    m = 2;
                     albedo = vec3(1.0f, 1.0f, 1.0f);
                     ir = 1.5f;
                 }

@@ -23,11 +23,11 @@ int main(int argc, char* argv[]) {
     const int samples_per_pixel = 1000;
     const int max_depth = 50;
 
-    // Camera
-    point3 lookfrom(5.0f, 2.0f, 5.0f);
-    point3 lookat(0.0f, 1.0f, 0.0f);
+    // Camera - positioned to see the packed spheres scene better
+    point3 lookfrom(8.0f, 6.0f, 8.0f);  // Higher and further back
+    point3 lookat(0.0f, 3.0f, 0.0f);    // Looking at the center of the sphere cluster
     vec3 vup(0,1,0);
-    float vfov = 40.0f;
+    float vfov = 30.0f;  // Slightly narrower field of view
     camera cam_host(lookfrom, lookat, vup, vfov, float(image_width)/image_height);
     CameraParams cam{};
     // Recompute camera params to pass as POD
